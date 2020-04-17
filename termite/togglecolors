@@ -1,0 +1,28 @@
+#!/usr/bin/python
+
+import os
+import subprocess
+
+config_dir = os.path.join(
+    os.getenv('HOME'), 
+    '.config/termite'
+)
+config_file = os.path.join(config_dir, 'config')
+
+theme_dir = os.path.join(config_dir, 'themes')
+theme_links = [
+    os.path.join(theme_dir, link)
+    for link in sorted(os.listdir(theme_dir))
+]
+
+current_theme = os.readlink(config_file)
+target_index = theme_links.index(current_theme)
+next_index = (target_index + 1) % len(theme_links)
+next_theme = theme_links[next_index]
+
+os.remove(config_file)
+os.symlink(
+    src=next_theme,
+    dst=config_file
+)
+subprocess.call(['killall', '-USR1', 'termite'])
