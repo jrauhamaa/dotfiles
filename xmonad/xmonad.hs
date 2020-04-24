@@ -58,10 +58,10 @@ configs = defaultConfig
     `additionalKeys`
     controlKeys
 
--- Custom PP, configure it as you like. It determines what is being written to the bar.
+-- Pretty print options
 pp = xmobarPP { ppCurrent = xmobarColor "#429942" "" . wrap "<" ">" }
 
--- Key binding to toggle the gap for the bar.
+-- Key binding to toggle the status bar
 toggleStrutsKey XConfig {XMonad.modMask = modMask} = (modMask, xK_b)
 
 main = xmonad =<< statusBar "xmobar" pp toggleStrutsKey configs

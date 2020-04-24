@@ -11,15 +11,11 @@ PS1='[\u@\h \W]\$ '
 # CUSTOM #
 ##########
 
-# Error on reference to unset variable
-set -u
-# Non-zero return code for pipes on error
-set -o pipefail
-
 # List files
 alias ll='ls -lAFGhv --time-style=+%m-%d --group-directories-first'
 alias l='ls -lAFv --format=single-column --group-directories-first'
 
+# tree view
 TDEPTH=2
 FLIMIT=25
 alias t="tree -dvL ${TDEPTH} --filelimit=${FLIMIT}"
@@ -39,3 +35,10 @@ export NNN_BMS='d:~/Downloads;h:~;r:/;c:~/code'
 export NNN_USE_EDITOR=1
 
 export PATH=$PATH:~/bin
+
+# git autocomplete
+. /usr/share/git/completion/git-completion.bash
+# show git branch in PS1
+. /usr/share/git/completion/git-prompt.sh
+export PS1='\[\e[0;02m\]\W\[\e[m\]$(__git_ps1 " (%s)")$ '
+

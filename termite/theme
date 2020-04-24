@@ -1,0 +1,3 @@
+#!/bin/sh
+
+echo "Using '$(readlink ~/.config/termite/config | xargs basename)'"
