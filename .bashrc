@@ -1,5 +1,4 @@
-#
-# ~/.bashrc
+# # ~/.bashrc
 #
 
 # If not running interactively, don't do anything
@@ -8,7 +7,35 @@
 alias ls='ls --color=auto'
 PS1='[\u@\h \W]\$ '
 
-# custom
+##########
+# CUSTOM #
+##########
+
+# Error on reference to unset variable
+set -u
+# Non-zero return code for pipes on error
+set -o pipefail
+
+# List files
 alias ll='ls -lAFGhv --time-style=+%m-%d --group-directories-first'
-alias la='ls -lAFv --format=single-column --group-directories-first'
+alias l='ls -lAFv --format=single-column --group-directories-first'
+
+TDEPTH=2
+FLIMIT=25
+alias t="tree -dvL ${TDEPTH} --filelimit=${FLIMIT}"
+alias tt="tree -davL ${TDEPTH} --filelimit=${FLIMIT}"
+alias ta="tree -av"
+for i in {1..9}
+do
+  alias t${i}="tree -dvL ${i} --filelimit=${FLIMIT}"
+  alias tt${i}="tree -davL ${i} --filelimit=${FLIMIT}"
+done
+
+# Prettier listing of processes
+alias p='ps ax -o pid,user,%cpu,%mem,vsz,rss,stat,bsdstart,times,args --forest'
+
+# nnn
+export NNN_BMS='d:~/Downloads;h:~;r:/;c:~/code'
+export NNN_USE_EDITOR=1
+
 export PATH=$PATH:~/bin

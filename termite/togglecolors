@@ -2,6 +2,16 @@
 
 import os
 import subprocess
+import argparse
+
+parser = argparse.ArgumentParser(description='Switch terminal color scheme')
+parser.add_argument(
+    '-r',
+    '--reverse',
+    action='store_true',
+    help='Reverse order'
+)
+args = parser.parse_args()
 
 config_dir = os.path.join(
     os.getenv('HOME'), 
@@ -16,9 +26,14 @@ theme_links = [
 ]
 
 current_theme = os.readlink(config_file)
-target_index = theme_links.index(current_theme)
-next_index = (target_index + 1) % len(theme_links)
+try:
+    target_index = theme_links.index(current_theme)
+except ValueError:
+    target_index = 0
+offset = -1 if args.reverse else 1
+next_index = (target_index + offset) % len(theme_links)
 next_theme = theme_links[next_index]
+print(f"Using '{os.path.basename(next_theme)}'")
 
 os.remove(config_file)
 os.symlink(
