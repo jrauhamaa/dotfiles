@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# An ugly hack for restarting XMonad. The XMonad config is somehow broken and
+# spawns new xmobar process on every restart. This is a temporary fix to be
+# used until the config is fixed.
+ps aux | awk '$11 == "xmobar" {print $2}' | xargs kill -9
+xmonad --restart
