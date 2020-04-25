@@ -1,3 +1,12 @@
+import System.Random
+    ( randomR
+    , getStdGen
+    )
+import System.Directory
+    ( listDirectory )
+import System.FilePath.Posix
+    ( joinPath )
+
 import XMonad
     -- config utils
     ( defaultConfig
@@ -23,16 +32,33 @@ import XMonad.Hooks.DynamicLog
     , xmobarPP
     )
 -- easier keybinding config utils
-import XMonad.Util.EZConfig 
+import XMonad.Util.EZConfig
     ( additionalKeys
     , additionalKeysP
     )
 
-wallpaperPath = "/home/joppe/Pictures/wallpapers/mushroom.jpg"
+wallpaperDir = "/home/joppe/Pictures/wallpapers/"
+
+getRandomIndex min max = do
+    gen <- getStdGen
+    let (index, newGen) = randomR (min, max) gen
+        in return index
+
+getWallpaperPath = do
+    wallpapers <- listDirectory wallpaperDir
+    index <- getRandomIndex 0 ((length wallpapers) - 1)
+    return $ joinPath
+        [ wallpaperDir
+        , (wallpapers !! index)
+        ]
+
+myTerminal = "termite"
+
 keyBindings =
     -- hotkeys for often used programs
     [ ("M-f",           spawn "firefox")
     , ("M-s",           spawn "spotify")
+    , ("M-n",           spawn $ myTerminal ++ " -e nnn")
     ]
 controlKeys =
     -- volume keys
@@ -44,7 +70,7 @@ controlKeys =
     , ((0, 0x1008FF03), spawn "xbacklight -dec 8")
     ]
 
-configs = defaultConfig 
+getConfig wallpaperPath = defaultConfig
     -- appearance
     { borderWidth        = 1
     -- mouse config
@@ -52,7 +78,7 @@ configs = defaultConfig
     , focusFollowsMouse  = False
     -- basic functionality
     , modMask            = mod4Mask -- Use Super instead of Alt
-    , terminal           = "termite"
+    , terminal           = myTerminal
     , startupHook        = spawn $ "feh --bg-fill " ++ wallpaperPath
     }
     `additionalKeysP`
@@ -66,5 +92,7 @@ pp = xmobarPP { ppCurrent = xmobarColor "#429942" "" . wrap "<" ">" }
 -- Key binding to toggle the status bar
 toggleStrutsKey XConfig {XMonad.modMask = modMask} = (modMask, xK_b)
 
-main = xmonad =<< statusBar "xmobar" pp toggleStrutsKey configs
-
+main = do
+    wallpaperPath <- getWallpaperPath
+    let config = getConfig wallpaperPath
+        in xmonad =<< statusBar "xmobar" pp toggleStrutsKey config

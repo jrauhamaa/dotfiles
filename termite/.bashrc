@@ -42,3 +42,7 @@ export PATH=$PATH:~/bin
 . /usr/share/git/completion/git-prompt.sh
 export PS1='\[\e[0;02m\]\W\[\e[m\]$(__git_ps1 " (%s)")$ '
 
+_themes_completion() {
+  COMPREPLY+=($(ls -lAv --format=single-column ~/.config/termite/themes))
+}
+complete -F _themes_completion theme
