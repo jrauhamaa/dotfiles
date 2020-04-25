@@ -31,7 +31,7 @@ done
 alias p='ps ax -o pid,user,%cpu,%mem,vsz,rss,stat,bsdstart,times,args --forest'
 
 # nnn
-export NNN_BMS='d:~/Downloads;h:~;r:/;c:~/code'
+export NNN_BMS='d:~/Downloads;h:~;r:/;c:~/code;p:~/code/projects'
 export NNN_USE_EDITOR=1
 
 export PATH=$PATH:~/bin

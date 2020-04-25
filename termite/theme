@@ -1,3 +1,49 @@
-#!/bin/sh
+#!/usr/bin/python
 
-echo "Using '$(readlink ~/.config/termite/config | xargs basename)'"
+import os
+import argparse
+import subprocess
+import sys
+
+parser = argparse.ArgumentParser(description='Set terminal color scheme')
+parser.add_argument('--set', help='Set to given theme')
+parser.add_argument(
+    '-l', 
+    '--list', 
+    action='store_true', 
+    help='List available themes'
+)
+args = parser.parse_args()
+
+config_dir = os.path.join(
+    os.getenv('HOME'), 
+    '.config/termite'
+)
+config_file = os.path.join(config_dir, 'config')
+themes_dir = os.path.join(config_dir, 'themes')
+if args.list:
+    print('Available themes:')
+    print(
+        '\n'.join([
+            f'- {item}' 
+            for item in os.listdir(themes_dir)
+        ])
+    )
+    print()
+if args.set:
+    theme_file = os.path.join(themes_dir, args.set)
+    if os.path.isfile(theme_file):
+        os.remove(config_file)
+        os.symlink(
+            src=theme_file, 
+            dst=config_file
+        )
+        # Refresh terminal
+        subprocess.call(['killall', '-USR1', 'termite'])
+    else:
+        print(f"Can't find theme {args.set} in {themes_dir}")
+        sys.exit(1)
+
+current_theme = os.path.basename(os.readlink(config_file))
+print(f"Using '{current_theme}'")
+
