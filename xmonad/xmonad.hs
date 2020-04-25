@@ -28,6 +28,7 @@ import XMonad.Util.EZConfig
     , additionalKeysP
     )
 
+wallpaperPath = "/home/joppe/Pictures/wallpapers/mushroom.jpg"
 keyBindings =
     -- hotkeys for often used programs
     [ ("M-f",           spawn "firefox")
@@ -52,6 +53,7 @@ configs = defaultConfig
     -- basic functionality
     , modMask            = mod4Mask -- Use Super instead of Alt
     , terminal           = "termite"
+    , startupHook        = spawn $ "feh --bg-fill " ++ wallpaperPath
     }
     `additionalKeysP`
     keyBindings
