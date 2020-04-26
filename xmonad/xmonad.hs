@@ -10,6 +10,7 @@ import System.FilePath.Posix
 import XMonad
     -- config utils
     ( def
+    , doF
     , sendMessage
     , spawn
     , XConfig ( XConfig )
@@ -23,6 +24,7 @@ import XMonad
     , clickJustFocuses
     , focusFollowsMouse
     , layoutHook
+    , manageHook
     , startupHook
     , terminal
     -- operators
@@ -47,6 +49,8 @@ import XMonad.Layout.ResizableTile
     ( ResizableTall ( ResizableTall )
     , MirrorResize ( MirrorExpand, MirrorShrink )
     )
+import XMonad.StackSet
+    ( swapDown )
 -- easier keybinding config utils
 import XMonad.Util.EZConfig
     ( additionalKeys
@@ -111,6 +115,7 @@ getConfig wallpaperPath = def
     , terminal           = myTerminal
     , startupHook        = startUp wallpaperPath
     , layoutHook         = myLayoutHook
+    , manageHook         = doF swapDown
     }
     `additionalKeysP`
     keyBindings
