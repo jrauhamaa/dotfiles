@@ -9,9 +9,10 @@ import System.FilePath.Posix
 
 import XMonad
     -- config utils
-    ( defaultConfig
+    ( def
+    , sendMessage
     , spawn
-    , XConfig(..)
+    , XConfig ( XConfig )
     , xmonad
     -- key bindings
     , modMask
@@ -21,7 +22,12 @@ import XMonad
     , borderWidth
     , clickJustFocuses
     , focusFollowsMouse
+    , layoutHook
+    , startupHook
     , terminal
+    -- operators
+    , (<+>)
+    , (|||)
     )
 -- xmobar utils
 import XMonad.Hooks.DynamicLog
@@ -30,6 +36,16 @@ import XMonad.Hooks.DynamicLog
     , wrap
     , xmobarColor
     , xmobarPP
+    )
+import XMonad.Layout
+    ( Full ( Full )
+    , Mirror ( Mirror )
+    )
+import XMonad.Layout.NoBorders
+    ( smartBorders )
+import XMonad.Layout.ResizableTile
+    ( ResizableTall ( ResizableTall )
+    , MirrorResize ( MirrorExpand, MirrorShrink )
     )
 -- easier keybinding config utils
 import XMonad.Util.EZConfig
@@ -59,6 +75,8 @@ keyBindings =
     [ ("M-f",           spawn "firefox")
     , ("M-s",           spawn "spotify")
     , ("M-n",           spawn $ myTerminal ++ " -e nnn")
+    , ("M-y",           sendMessage $ MirrorExpand)
+    , ("M-o",           sendMessage $ MirrorShrink)
     ]
 controlKeys =
     -- volume keys
@@ -70,7 +88,19 @@ controlKeys =
     , ((0, 0x1008FF03), spawn "xbacklight -dec 8")
     ]
 
-getConfig wallpaperPath = defaultConfig
+startUp wallpaperPath =
+    spawn "picom --config /home/joppe/.config/picom/picom.conf -bcCGf -i 0.8 -e 0.8 --no-fading-openclose --sw-opti"
+        <+> (spawn $ "feh --bg-fill " ++ wallpaperPath)
+
+tallLayout = ResizableTall nMasters resizeDelta masterWidth slaveHeights
+    where nMasters = 1
+          resizeDelta = 1/10
+          masterWidth = 1/2
+          slaveHeights = [] -- default = 1
+myLayoutHook = smartBorders $
+    tallLayout ||| Mirror tallLayout ||| Full
+
+getConfig wallpaperPath = def
     -- appearance
     { borderWidth        = 1
     -- mouse config
@@ -79,7 +109,8 @@ getConfig wallpaperPath = defaultConfig
     -- basic functionality
     , modMask            = mod4Mask -- Use Super instead of Alt
     , terminal           = myTerminal
-    , startupHook        = spawn $ "feh --bg-fill " ++ wallpaperPath
+    , startupHook        = startUp wallpaperPath
+    , layoutHook         = myLayoutHook
     }
     `additionalKeysP`
     keyBindings
