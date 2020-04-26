@@ -22,9 +22,11 @@ import XMonad
     -- config vars
     , borderWidth
     , clickJustFocuses
+    , focusedBorderColor
     , focusFollowsMouse
     , layoutHook
     , manageHook
+    , normalBorderColor
     , startupHook
     , terminal
     -- operators
@@ -39,16 +41,20 @@ import XMonad.Hooks.DynamicLog
     , xmobarColor
     , xmobarPP
     )
-import XMonad.Layout
-    ( Full ( Full )
-    , Mirror ( Mirror )
-    )
+
+import qualified XMonad.Layout as Layout
+import qualified XMonad.Layout.Gaps as Gaps
 import XMonad.Layout.NoBorders
     ( smartBorders )
 import XMonad.Layout.ResizableTile
     ( ResizableTall ( ResizableTall )
     , MirrorResize ( MirrorExpand, MirrorShrink )
     )
+import XMonad.Layout.Spacing
+    ( spacingRaw
+    , Border ( Border )
+    )
+
 import XMonad.StackSet
     ( swapDown )
 -- easier keybinding config utils
@@ -101,12 +107,24 @@ tallLayout = ResizableTall nMasters resizeDelta masterWidth slaveHeights
           resizeDelta = 1/10
           masterWidth = 1/2
           slaveHeights = [] -- default = 1
-myLayoutHook = smartBorders $
-    tallLayout ||| Mirror tallLayout ||| Full
+
+myLayoutHook = spacingRaw smart screenBorder screen windowBorder window
+                $ smartBorders
+                $ tallLayout
+                    ||| Layout.Mirror tallLayout
+                    ||| Layout.Full
+                    where screenBorder = Border 3 3 3 3
+                          windowBorder = Border 3 3 3 3
+                          smart        = True
+                          screen       = True
+                          window       = True
+
 
 getConfig wallpaperPath = def
     -- appearance
-    { borderWidth        = 1
+    { borderWidth        = 2
+    , normalBorderColor  = "#151515"
+    , focusedBorderColor = "#ffffff"
     -- mouse config
     , clickJustFocuses   = False
     , focusFollowsMouse  = False
