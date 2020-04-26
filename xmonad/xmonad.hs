@@ -25,6 +25,7 @@ import XMonad
     , focusedBorderColor
     , focusFollowsMouse
     , layoutHook
+    , logHook
     , manageHook
     , normalBorderColor
     , startupHook
@@ -32,6 +33,7 @@ import XMonad
     -- operators
     , (<+>)
     , (|||)
+    , (-->)
     )
 -- xmobar utils
 import XMonad.Hooks.DynamicLog
@@ -41,6 +43,8 @@ import XMonad.Hooks.DynamicLog
     , xmobarColor
     , xmobarPP
     )
+import XMonad.Hooks.FadeInactive
+    ( fadeInactiveLogHook )
 
 import qualified XMonad.Layout as Layout
 import qualified XMonad.Layout.Gaps as Gaps
@@ -99,7 +103,7 @@ controlKeys =
     ]
 
 startUp wallpaperPath =
-    spawn "picom --config /home/joppe/.config/picom/picom.conf -bcCGf -i 0.8 -e 0.8 --no-fading-openclose --sw-opti"
+    spawn "picom -bcCGf"
         <+> (spawn $ "feh --bg-fill " ++ wallpaperPath)
 
 tallLayout = ResizableTall nMasters resizeDelta masterWidth slaveHeights
@@ -133,6 +137,7 @@ getConfig wallpaperPath = def
     , terminal           = myTerminal
     , startupHook        = startUp wallpaperPath
     , layoutHook         = myLayoutHook
+    , logHook            = fadeInactiveLogHook 0.9
     , manageHook         = doF swapDown
     }
     `additionalKeysP`
