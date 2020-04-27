@@ -8,6 +8,7 @@ set shiftwidth  =4
 
 " remove trailing whitespace on save
 autocmd BufWritePre * :%s/\s\+$//e
+autocmd BufWritePost thesis.tex silent! make | redraw!
 " remove trailing empty lines on save
 " autocmd BufWritePre * :%s#\($\n\s*\)\+\%$##
 " highlight portions of lines over 80 characters long

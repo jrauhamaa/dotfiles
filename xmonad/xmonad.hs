@@ -13,6 +13,7 @@ import XMonad
     , doF
     , sendMessage
     , spawn
+    , windows
     , XConfig ( XConfig )
     , xmonad
     -- key bindings
@@ -60,7 +61,10 @@ import XMonad.Layout.Spacing
     )
 
 import XMonad.StackSet
-    ( swapDown )
+    ( greedyView
+    , shift
+    , swapDown
+    )
 import XMonad.Util.SpawnOnce
     ( spawnOnce )
 -- easier keybinding config utils
@@ -95,6 +99,15 @@ keyBindings =
     , ("M-o",           sendMessage $ MirrorShrink)
     , ("M-S-l",         spawn "xscreensaver-command -lock")
     ]
+    ++
+    -- move window to workspace n and focus that workspace
+    [ let iLiteral = show i
+      in ("M-S-" ++ show iLiteral
+         , windows (greedyView iLiteral . shift iLiteral)
+         )
+      | i <- [1..9]
+    ]
+
 controlKeys =
     -- volume keys
     [ ((0, 0x1008FF11)
