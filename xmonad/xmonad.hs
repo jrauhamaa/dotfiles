@@ -90,6 +90,11 @@ getWallpaperPath = do
 
 myTerminal = "termite"
 
+-- An ugly hack to only start redshift if not yet running. spawnOnce is not
+-- suitable for this since it won't launch redshift after it has been stopped.
+spawnRedshift = "[ -z $(pgrep redshift) ] && redshift -t 6500K:3500K"
+killRedshift  = "pgrep redshift | xargs kill"
+
 keyBindings =
     -- hotkeys for often used programs
     [ ("M-f",           spawn "firefox")
@@ -98,12 +103,13 @@ keyBindings =
     , ("M-y",           sendMessage $ MirrorExpand)
     , ("M-o",           sendMessage $ MirrorShrink)
     , ("M-S-l",         spawn "xscreensaver-command -lock")
+    , ("M-r",           spawn spawnRedshift)
+    , ("M-S-r",         spawn killRedshift)
     ]
     ++
-    -- move window to workspace n and focus that workspace
-    [ let iLiteral = show i
-      in ("M-S-" ++ show iLiteral
-         , windows (greedyView iLiteral . shift iLiteral)
+    [ let index = show i
+      in ( "M-S-" ++ index
+         , windows (greedyView index . shift index)
          )
       | i <- [1..9]
     ]
