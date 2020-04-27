@@ -61,6 +61,8 @@ import XMonad.Layout.Spacing
 
 import XMonad.StackSet
     ( swapDown )
+import XMonad.Util.SpawnOnce
+    ( spawnOnce )
 -- easier keybinding config utils
 import XMonad.Util.EZConfig
     ( additionalKeys
@@ -91,11 +93,14 @@ keyBindings =
     , ("M-n",           spawn $ myTerminal ++ " -e nnn")
     , ("M-y",           sendMessage $ MirrorExpand)
     , ("M-o",           sendMessage $ MirrorShrink)
+    , ("M-S-l",         spawn "xscreensaver-command -lock")
     ]
 controlKeys =
     -- volume keys
-    [ ((0, 0x1008FF11), spawn "amixer set Master unmute && amixer -q sset Master 2%-")
-    , ((0, 0x1008FF13), spawn "amixer set Master unmute && amixer -q sset Master 2%+")
+    [ ((0, 0x1008FF11)
+       , spawn "amixer set Master unmute && amixer -q sset Master 2%-")
+    , ((0, 0x1008FF13)
+       , spawn "amixer set Master unmute && amixer -q sset Master 2%+")
     , ((0, 0x1008FF12), spawn "amixer set Master toggle")
     -- brightness keys
     , ((0, 0x1008FF02), spawn "xbacklight -inc 8")
@@ -105,6 +110,7 @@ controlKeys =
 startUp wallpaperPath =
     spawn "picom -bcCGf"
         <+> (spawn $ "feh --bg-fill " ++ wallpaperPath)
+        <+> (spawnOnce "xscreensaver -no-splash")
 
 tallLayout = ResizableTall nMasters resizeDelta masterWidth slaveHeights
     where nMasters = 1
