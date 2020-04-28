@@ -1,5 +1,5 @@
 -- based on arch wiki template: wiki.archlinux.org/index.php/Xmobar
-Config { 
+Config {
 
    -- appearance
      font =         "xft:Bitstream Vera Sans Mono:size=9:bold:antialias=true"
@@ -12,7 +12,8 @@ Config {
    -- layout
    , sepChar =  "%"   -- delineator between plugin names and straight text
    , alignSep = "}{"  -- separator between left-right alignment
-   , template = "%battery% | %multicpu% | %coretemp% | %memory% | %dynnetwork% }{ %date% "
+   , template =
+        "%battery% | %multicpu% | %memory% | %dynnetwork% }{ %networkname% | %date% "
 
    -- general behavior
    , lowerOnStart =     True    -- send to bottom of window stack on start
@@ -36,10 +37,10 @@ Config {
    --   The --template option controls how the plugin is displayed. Text
    --   color can be set by enclosing in <fc></fc> tags. For more details
    --   see http://projects.haskell.org/xmobar/#system-monitor-plugins.
-   , commands = 
+   , commands =
 
         -- network activity monitor (dynamic interface resolution)
-        [ Run DynNetwork     [ "--template" , "<tx>kB/s|<rx>kB/s"
+        [ Run DynNetwork     [ "--template" , "<tx>|<rx>kB/s"
                              , "--Low"      , "1000"       -- units: B/s
                              , "--High"     , "5000"       -- units: B/s
                              , "--low"      , "darkgreen"
@@ -56,15 +57,17 @@ Config {
                              , "--high"     , "darkred"
                              ] 10
 
-        -- cpu core temperature monitor
-        , Run CoreTemp       [ "--template" , "<core0>°C|<core1>°C"
-                             , "--Low"      , "70"        -- units: °C
-                             , "--High"     , "80"        -- units: °C
-                             , "--low"      , "darkgreen"
-                             , "--normal"   , "darkorange"
-                             , "--high"     , "darkred"
-                             ] 50
-                          
+        --
+        --
+        , Run Com
+              "sh"
+              [ "-c"
+              , "nmcli connection show | awk -f /home/joppe/code/projects/dotfiles/xmonad/networkname.awk"
+              ]
+              -- [ "-c", "nmcli connection show" ]
+              "networkname"
+              100
+
         -- memory usage monitor
         , Run Memory         [ "--template" ,"Mem: <usedratio>%"
                              , "--Low"      , "20"        -- units: %
@@ -91,7 +94,7 @@ Config {
                                        , "-i"	, "<fc=#006000>Charged</fc>"
                              ] 50
 
-        -- time and date indicator 
+        -- time and date indicator
         --   (%F = y-m-d date, %a = day of week, %T = h:m:s time)
         , Run Date           "<fc=#ABABAB>%F (%a) %T</fc>" "date" 10
 

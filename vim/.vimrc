@@ -5,10 +5,12 @@ set expandtab
 set tabstop     =4
 set softtabstop =4
 set shiftwidth  =4
+set nowrap
 
 " remove trailing whitespace on save
 autocmd BufWritePre * :%s/\s\+$//e
 autocmd BufWritePost thesis.tex silent! make | redraw!
+autocmd BufReadPre,FileReadPre .xmobarrc :set syntax=haskell
 " remove trailing empty lines on save
 " autocmd BufWritePre * :%s#\($\n\s*\)\+\%$##
 " highlight portions of lines over 80 characters long
