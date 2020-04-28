@@ -6,6 +6,8 @@ import System.Directory
     ( listDirectory )
 import System.FilePath.Posix
     ( joinPath )
+import System.Posix.Types
+    ( ProcessID )
 
 import XMonad
     -- config utils
@@ -35,6 +37,8 @@ import XMonad
     , (<+>)
     , (|||)
     , (-->)
+    -- types
+    , MonadIO
     )
 -- xmobar utils
 import XMonad.Hooks.DynamicLog
@@ -90,6 +94,15 @@ getWallpaperPath = do
 
 myTerminal = "termite"
 
+notificationTimeOut = 3
+sendNotification :: MonadIO m => String -> m ()
+sendNotification message =
+    let command = "echo \""
+                    ++ message
+                    ++ "\" | dzen2 -p "
+                    ++ show notificationTimeOut
+    in spawn command
+
 -- An ugly hack to only start redshift if not yet running. spawnOnce is not
 -- suitable for this since it won't launch redshift after it has been stopped.
 spawnRedshift = "[ -z $(pgrep redshift) ] && redshift -t 6500K:3500K"
@@ -103,8 +116,14 @@ keyBindings =
     , ("M-y",           sendMessage $ MirrorExpand)
     , ("M-o",           sendMessage $ MirrorShrink)
     , ("M-S-l",         spawn "xscreensaver-command -lock")
-    , ("M-r",           spawn spawnRedshift)
-    , ("M-S-r",         spawn killRedshift)
+    , ( "M-r"
+      , spawn spawnRedshift
+        <+> sendNotification "redshift: on"
+      )
+    , ( "M-S-r"
+      , spawn killRedshift
+        <+> sendNotification "redshift: off"
+      )
     ]
     ++
     [ let index = show i
@@ -114,16 +133,35 @@ keyBindings =
       | i <- [1..9]
     ]
 
+-- Unfortunately, this seems to be the way to get volume level from amixer :(
+volumeMessage = "Volume: $("
+                ++ "amixer sget Master | awk -F'[][]' '/dB/ { print $2 }'"
+                ++ ")"
+
+brightnessMessage = "Brightness: $("
+                    ++ "xbacklight | sed -re 's/\\.?0+$//g'"
+                    ++ ")%"
+
 controlKeys =
     -- volume keys
-    [ ((0, 0x1008FF11)
-       , spawn "amixer set Master unmute && amixer -q sset Master 2%-")
-    , ((0, 0x1008FF13)
-       , spawn "amixer set Master unmute && amixer -q sset Master 2%+")
+    [ ( (0, 0x1008FF11)
+      , spawn "amixer set Master unmute && amixer -q sset Master 2%-"
+         <+> sendNotification volumeMessage
+      )
+    , ( (0, 0x1008FF13)
+      , spawn "amixer set Master unmute && amixer -q sset Master 2%+"
+         <+> sendNotification volumeMessage
+      )
     , ((0, 0x1008FF12), spawn "amixer set Master toggle")
     -- brightness keys
-    , ((0, 0x1008FF02), spawn "xbacklight -inc 8")
-    , ((0, 0x1008FF03), spawn "xbacklight -dec 8")
+    , ( (0, 0x1008FF02)
+      , spawn "xbacklight -inc 8"
+        <+> sendNotification brightnessMessage
+      )
+    , ( (0, 0x1008FF03)
+      , spawn "xbacklight -dec 8"
+        <+> sendNotification brightnessMessage
+      )
     ]
 
 startUp wallpaperPath =
