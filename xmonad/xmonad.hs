@@ -105,17 +105,32 @@ sendNotification message =
 
 -- An ugly hack to only start redshift if not yet running. spawnOnce is not
 -- suitable for this since it won't launch redshift after it has been stopped.
-spawnRedshift = "[ -z $(pgrep redshift) ] && redshift -t 6500K:3500K"
+dayT          = 5000
+nightT        = 3500
+spawnRedshift = "[ -z $(pgrep redshift) ]"
+                ++ " && redshift -t "
+                ++ show dayT ++ "K:"
+                ++ show nightT ++ "K"
 killRedshift  = "pgrep redshift | xargs kill"
+
+captureClipboard command = command
+                           ++ " | xclip -selection clipboard -t image/png"
+captureScreen    = captureClipboard "maim"
+captureSelection = captureClipboard "maim -s"
+captureWindow    = captureClipboard
+                       ( "maim -i $("
+                         ++ "xdotool getmouselocation | "
+                         ++ "sed -re 's/.*window:([0-9]+)/\\1/'"
+                         ++ ")" )
 
 keyBindings =
     -- hotkeys for often used programs
-    [ ("M-f",           spawn "firefox")
-    , ("M-s",           spawn "spotify")
-    , ("M-n",           spawn $ myTerminal ++ " -e nnn")
-    , ("M-y",           sendMessage $ MirrorExpand)
-    , ("M-o",           sendMessage $ MirrorShrink)
-    , ("M-S-l",         spawn "xscreensaver-command -lock")
+    [ ( "M-f",           spawn "firefox" )
+    , ( "M-s",           spawn "spotify" )
+    , ( "M-n",           spawn $ myTerminal ++ " -e nnn" )
+    , ( "M-y",           sendMessage $ MirrorExpand )
+    , ( "M-o",           sendMessage $ MirrorShrink )
+    , ( "M-S-l",         spawn "xscreensaver-command -lock" )
     , ( "M-r"
       , spawn spawnRedshift
         <+> sendNotification "redshift: on"
@@ -123,6 +138,18 @@ keyBindings =
     , ( "M-S-r"
       , spawn killRedshift
         <+> sendNotification "redshift: off"
+      )
+    , ( "M-i"
+      , spawn captureScreen
+        <+> sendNotification "screen copied to clipboard"
+      )
+    , ( "M-S-i"
+      , spawn captureSelection
+        <+> sendNotification "select area to be copied to clipboard"
+      )
+    , ( "M-C-i"
+      , spawn captureWindow
+        <+> sendNotification "window copied to clipboard"
       )
     ]
     ++
@@ -189,7 +216,7 @@ myLayoutHook = spacingRaw smart screenBorder screen windowBorder window
 
 getConfig wallpaperPath = def
     -- appearance
-    { borderWidth        = 2
+    { borderWidth        = 1
     , normalBorderColor  = "#151515"
     , focusedBorderColor = "#ffffff"
     -- mouse config
