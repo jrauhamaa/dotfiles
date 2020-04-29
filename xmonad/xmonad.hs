@@ -22,6 +22,8 @@ import XMonad
     , modMask
     , mod4Mask
     , xK_b
+    , xK_Print
+    , shiftMask
     -- config vars
     , borderWidth
     , clickJustFocuses
@@ -37,6 +39,7 @@ import XMonad
     , (<+>)
     , (|||)
     , (-->)
+    , (.|.)
     -- types
     , MonadIO
     )
@@ -139,18 +142,6 @@ keyBindings =
       , spawn killRedshift
         <+> sendNotification "redshift: off"
       )
-    , ( "M-i"
-      , spawn captureScreen
-        <+> sendNotification "screen copied to clipboard"
-      )
-    , ( "M-S-i"
-      , spawn captureSelection
-        <+> sendNotification "select area to be copied to clipboard"
-      )
-    , ( "M-C-i"
-      , spawn captureWindow
-        <+> sendNotification "window copied to clipboard"
-      )
     ]
     ++
     [ let index = show i
@@ -163,6 +154,11 @@ keyBindings =
 -- Unfortunately, this seems to be the way to get volume level from amixer :(
 volumeMessage = "Volume: $("
                 ++ "amixer sget Master | awk -F'[][]' '/dB/ { print $2 }'"
+                ++ ")"
+muteMessage   = "Audio: $("
+                ++ "amixer sget Master"
+                ++ " | awk -F'[][]' '/dB/ { print $6 }'"
+                ++ " | sed -e 's/on/unmuted/' -e 's/off/muted/'"
                 ++ ")"
 
 brightnessMessage = "Brightness: $("
@@ -179,7 +175,10 @@ controlKeys =
       , spawn "amixer set Master unmute && amixer -q sset Master 2%+"
          <+> sendNotification volumeMessage
       )
-    , ((0, 0x1008FF12), spawn "amixer set Master toggle")
+    , ( (0, 0x1008FF12)
+      , spawn "amixer set Master toggle"
+        <+> sendNotification muteMessage
+      )
     -- brightness keys
     , ( (0, 0x1008FF02)
       , spawn "xbacklight -inc 8"
@@ -188,6 +187,18 @@ controlKeys =
     , ( (0, 0x1008FF03)
       , spawn "xbacklight -dec 8"
         <+> sendNotification brightnessMessage
+      )
+    , ( (0, xK_Print)
+      , spawn captureScreen
+        <+> sendNotification "screen copied to clipboard"
+      )
+    , ( (mod4Mask, xK_Print)
+      , spawn captureSelection
+        <+> sendNotification "select area to be copied to clipboard"
+      )
+    , ( (mod4Mask .|. shiftMask, xK_Print)
+      , spawn captureWindow
+        <+> sendNotification "window copied to clipboard"
       )
     ]
 
