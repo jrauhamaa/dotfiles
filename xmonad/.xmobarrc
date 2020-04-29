@@ -11,7 +11,7 @@ Config {
    , sepChar =  "%"   -- delineator between plugin names and straight text
    , alignSep = "}{"  -- separator between left-right alignment
    , template =
-        "%battery% | %multicpu% | %memory% | %dynnetwork% }{ %networkname% | %date% "
+        "%StdinReader% | %battery% | %multicpu% | %memory% | %dynnetwork% }{ %networkname% | %date% "
 
    -- general behavior
    , lowerOnStart =     True    -- send to bottom of window stack on start
@@ -54,6 +54,8 @@ Config {
                              , "--normal"   , "darkorange"
                              , "--high"     , "darkred"
                              ] 10
+
+        , Run StdinReader
 
         , Run Com
               "sh"

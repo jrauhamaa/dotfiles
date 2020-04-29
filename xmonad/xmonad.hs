@@ -1,3 +1,5 @@
+import System.IO
+    ( hPutStrLn )
 import System.Random
     ( randomR
     , getStdGen
@@ -46,6 +48,8 @@ import XMonad
 -- xmobar utils
 import XMonad.Hooks.DynamicLog
     ( ppCurrent
+    , ppOutput
+    , dynamicLogWithPP
     , statusBar
     , wrap
     , xmobarColor
@@ -79,6 +83,8 @@ import XMonad.Util.EZConfig
     ( additionalKeys
     , additionalKeysP
     )
+import XMonad.Util.Run
+    ( spawnPipe )
 
 wallpaperDir = "/home/joppe/Pictures/wallpapers/"
 
@@ -162,7 +168,9 @@ muteMessage   = "Audio: $("
                 ++ ")"
 
 brightnessMessage = "Brightness: $("
-                    ++ "xbacklight | sed -re 's/\\.?0+$//g'"
+                    ++ "xbacklight"
+                    ++ " | sed -re 's/\\.?0+$//g'"
+                    ++ " | head -c 4"
                     ++ ")%"
 
 controlKeys =
@@ -224,8 +232,19 @@ myLayoutHook = spacingRaw smart screenBorder screen windowBorder window
                           screen       = True
                           window       = True
 
+-- A hack to extract part of string between brackets.
+-- TODO: Find a proper way to do this
+workspaceStringColor = "#78e1f5"
+workspaceFormat = (("<fc=" ++ workspaceStringColor ++ ">") ++)
+                  . (++ "]</fc>")
+                  . takeWhile (/= ']')
+                  . dropWhile (/= '[')
+workspaceLogHook xmproc = dynamicLogWithPP $
+                      xmobarPP {
+                        ppOutput = (hPutStrLn xmproc) . workspaceFormat
+                      }
 
-getConfig wallpaperPath = def
+getConfig wallpaperPath xmproc = def
     -- appearance
     { borderWidth        = 1
     , normalBorderColor  = "#151515"
@@ -238,7 +257,8 @@ getConfig wallpaperPath = def
     , terminal           = myTerminal
     , startupHook        = startUp wallpaperPath
     , layoutHook         = myLayoutHook
-    , logHook            = fadeInactiveLogHook 0.9
+    -- , logHook            = fadeInactiveLogHook 0.9
+    , logHook            = workspaceLogHook xmproc <+> fadeInactiveLogHook 0.9
     , manageHook         = doF swapDown
     }
     `additionalKeysP`
@@ -254,5 +274,6 @@ toggleStrutsKey XConfig {XMonad.modMask = modMask} = (modMask, xK_b)
 
 main = do
     wallpaperPath <- getWallpaperPath
-    let config = getConfig wallpaperPath
+    xmproc        <- spawnPipe "xmobar -d"
+    let config = getConfig wallpaperPath xmproc
         in xmonad =<< statusBar "xmobar" pp toggleStrutsKey config
