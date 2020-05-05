@@ -1,90 +1,28 @@
 import System.IO
-    ( hPutStrLn )
 import System.Random
-    ( randomR
-    , getStdGen
-    )
 import System.Directory
-    ( listDirectory )
 import System.FilePath.Posix
-    ( joinPath )
 import System.Posix.Types
-    ( ProcessID )
 
 import XMonad
-    -- config utils
-    ( def
-    , doF
-    , sendMessage
-    , spawn
-    , windows
-    , XConfig ( XConfig )
-    , xmonad
-    -- key bindings
-    , modMask
-    , mod4Mask
-    , xK_b
-    , xK_Print
-    , shiftMask
-    -- config vars
-    , borderWidth
-    , clickJustFocuses
-    , focusedBorderColor
-    , focusFollowsMouse
-    , layoutHook
-    , logHook
-    , manageHook
-    , normalBorderColor
-    , startupHook
-    , terminal
-    -- operators
-    , (<+>)
-    , (|||)
-    , (-->)
-    , (.|.)
-    -- types
-    , MonadIO
-    )
+
 -- xmobar utils
-import XMonad.Hooks.DynamicLog
-    ( ppCurrent
-    , ppOutput
-    , dynamicLogWithPP
-    , statusBar
-    , wrap
-    , xmobarColor
-    , xmobarPP
-    )
-import XMonad.Hooks.FadeInactive
-    ( fadeInactiveLogHook )
+import qualified XMonad.Hooks.DynamicLog as Log
+import qualified XMonad.Hooks.FadeInactive as FadeInactive
 
+-- xmonad utils
 import qualified XMonad.Layout as Layout
-import qualified XMonad.Layout.Gaps as Gaps
-import XMonad.Layout.NoBorders
-    ( smartBorders )
-import XMonad.Layout.ResizableTile
-    ( ResizableTall ( ResizableTall )
-    , MirrorResize ( MirrorExpand, MirrorShrink )
-    )
-import XMonad.Layout.Spacing
-    ( spacingRaw
-    , Border ( Border )
-    )
-
-import XMonad.StackSet
-    ( greedyView
-    , shift
-    , swapDown
-    )
-import XMonad.Util.SpawnOnce
-    ( spawnOnce )
--- easier keybinding config utils
+import qualified XMonad.Layout.NoBorders as NoBorders
+import qualified XMonad.Layout.ResizableTile as ResizableTile
+import qualified XMonad.Layout.Spacing as Spacing
+import qualified XMonad.StackSet as StackSet
+import qualified XMonad.Util.SpawnOnce as SpawnOnce
+import qualified XMonad.Util.Run as Run
+-- easier keybindings
 import XMonad.Util.EZConfig
     ( additionalKeys
     , additionalKeysP
     )
-import XMonad.Util.Run
-    ( spawnPipe )
 
 wallpaperDir = "/home/joppe/Pictures/wallpapers/"
 
@@ -138,8 +76,8 @@ keyBindings =
     , ( "M-s",           spawn "spotify" )
     , ( "M-i",           spawn "qutebrowser" )
     , ( "M-n",           spawn $ myTerminal ++ " -e nnn" )
-    , ( "M-y",           sendMessage $ MirrorExpand )
-    , ( "M-o",           sendMessage $ MirrorShrink )
+    , ( "M-y",           sendMessage $ ResizableTile.MirrorExpand )
+    , ( "M-o",           sendMessage $ ResizableTile.MirrorShrink )
     , ( "M-S-l",         spawn "xscreensaver-command -lock" )
     , ( "M-r"
       , spawn spawnRedshift
@@ -153,12 +91,12 @@ keyBindings =
     ++
     [ let index = show i
       in ( "M-S-" ++ index
-         , windows (greedyView index . shift index)
+         , windows (StackSet.greedyView index . StackSet.shift index)
          )
       | i <- [1..9]
     ]
 
--- Unfortunately, this seems to be the way to get volume level from amixer :(
+-- Unfortunately, this seems to be the way to get volume level pulse :(
 volumeMessage = "Volume: $("
                 ++ "sleep 0.1 && " -- wait for the volume change to apply
                 ++ "pactl list sinks"
@@ -218,21 +156,24 @@ controlKeys =
 startUp wallpaperPath =
     spawn "picom -bcCGf"
         <+> (spawn $ "feh --bg-fill " ++ wallpaperPath)
-        <+> (spawnOnce "xscreensaver -no-splash")
+        <+> (SpawnOnce.spawnOnce "xscreensaver -no-splash")
 
-tallLayout = ResizableTall nMasters resizeDelta masterWidth slaveHeights
+tallLayout = ResizableTile.ResizableTall nMasters
+                                         resizeDelta
+                                         masterWidth
+                                         slaveHeights
     where nMasters = 1
           resizeDelta = 1/10
           masterWidth = 1/2
           slaveHeights = [] -- default = 1
 
-myLayoutHook = spacingRaw smart screenBorder screen windowBorder window
-                $ smartBorders
+myLayoutHook = Spacing.spacingRaw smart screenBorder screen windowBorder window
+                $ NoBorders.smartBorders
                 $ tallLayout
                     ||| Layout.Mirror tallLayout
                     ||| Layout.Full
-                    where screenBorder = Border 3 3 3 3
-                          windowBorder = Border 3 3 3 3
+                    where screenBorder = Spacing.Border 3 3 3 3
+                          windowBorder = Spacing.Border 3 3 3 3
                           smart        = True
                           screen       = True
                           window       = True
@@ -244,9 +185,9 @@ workspaceFormat = (("<fc=" ++ workspaceStringColor ++ ">") ++)
                   . (++ "]</fc>")
                   . takeWhile (/= ']')
                   . dropWhile (/= '[')
-workspaceLogHook xmproc = dynamicLogWithPP $
-                      xmobarPP {
-                        ppOutput = (hPutStrLn xmproc) . workspaceFormat
+workspaceLogHook xmproc = Log.dynamicLogWithPP $
+                      Log.xmobarPP {
+                        Log.ppOutput = (hPutStrLn xmproc) . workspaceFormat
                       }
 
 getConfig wallpaperPath xmproc = def
@@ -262,9 +203,9 @@ getConfig wallpaperPath xmproc = def
     , terminal           = myTerminal
     , startupHook        = startUp wallpaperPath
     , layoutHook         = myLayoutHook
-    -- , logHook            = fadeInactiveLogHook 0.9
-    , logHook            = workspaceLogHook xmproc <+> fadeInactiveLogHook 0.9
-    , manageHook         = doF swapDown
+    , logHook            = workspaceLogHook xmproc
+                            <+> FadeInactive.fadeInactiveLogHook 0.9
+    , manageHook         = doF StackSet.swapDown
     }
     `additionalKeysP`
     keyBindings
@@ -272,13 +213,16 @@ getConfig wallpaperPath xmproc = def
     controlKeys
 
 -- Pretty print options
-pp = xmobarPP { ppCurrent = xmobarColor "#429942" "" . wrap "<" ">" }
+pp = Log.xmobarPP {
+    Log.ppCurrent = Log.xmobarColor "#429942" ""
+                        . Log.wrap "<" ">"
+}
 
 -- Key binding to toggle the status bar
 toggleStrutsKey XConfig {XMonad.modMask = modMask} = (modMask, xK_b)
 
 main = do
     wallpaperPath <- getWallpaperPath
-    xmproc        <- spawnPipe "xmobar -d"
+    xmproc        <- Run.spawnPipe "xmobar -d"
     let config = getConfig wallpaperPath xmproc
-        in xmonad =<< statusBar "xmobar" pp toggleStrutsKey config
+        in xmonad =<< Log.statusBar "xmobar" pp toggleStrutsKey config
