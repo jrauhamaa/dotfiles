@@ -16,3 +16,7 @@ autocmd BufReadPre,FileReadPre .xmobarrc :set syntax=haskell
 " highlight portions of lines over 80 characters long
 highlight ColorColumn ctermbg=darkgray
 call matchadd('ColorColumn', '\%>80v', 100)
+
+nmap oo o<Esc>k
+nmap OO O<Esc>j
+

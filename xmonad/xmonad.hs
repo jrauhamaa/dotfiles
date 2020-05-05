@@ -136,6 +136,7 @@ keyBindings =
     -- hotkeys for often used programs
     [ ( "M-f",           spawn "firefox" )
     , ( "M-s",           spawn "spotify" )
+    , ( "M-i",           spawn "qutebrowser" )
     , ( "M-n",           spawn $ myTerminal ++ " -e nnn" )
     , ( "M-y",           sendMessage $ MirrorExpand )
     , ( "M-o",           sendMessage $ MirrorShrink )
@@ -159,12 +160,16 @@ keyBindings =
 
 -- Unfortunately, this seems to be the way to get volume level from amixer :(
 volumeMessage = "Volume: $("
-                ++ "amixer sget Master | awk -F'[][]' '/dB/ { print $2 }'"
+                ++ "sleep 0.1 && " -- wait for the volume change to apply
+                ++ "pactl list sinks"
+                ++ " | awk -F'/' '/Volume: front/  { print $4 }'"
                 ++ ")"
+
 muteMessage   = "Audio: $("
-                ++ "amixer sget Master"
-                ++ " | awk -F'[][]' '/dB/ { print $6 }'"
-                ++ " | sed -e 's/on/unmuted/' -e 's/off/muted/'"
+                ++ "sleep 0.1 && "
+                ++ "pactl list sinks" -- wait for the changes to apply
+                ++ " | awk '/Mute: / { print $2 } '"
+                ++ " | sed -e 's/yes/muted/' -e 's/no/unmuted/'"
                 ++ ")"
 
 brightnessMessage = "Brightness: $("
