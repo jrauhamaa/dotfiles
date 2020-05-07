@@ -39,7 +39,7 @@ export NNN_BMS="d:~/Downloads\
 ;t:~/code/projects/dippa"
 export NNN_USE_EDITOR=1
 
-export PATH=$PATH:~/bin
+export PATH=~/bin:$PATH
 
 # git autocomplete
 . /usr/share/git/completion/git-completion.bash

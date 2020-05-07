@@ -70,11 +70,28 @@ captureWindow    = captureClipboard
                          ++ "sed -re 's/.*window:([0-9]+)/\\1/'"
                          ++ ")" )
 
+spotifySend     = "dbus-send"
+                  ++ " --print-reply"
+                  ++ " --dest=org.mpris.MediaPlayer2.spotify"
+                  ++ " /org/mpris/MediaPlayer2"
+                  ++ " org.mpris.MediaPlayer2.Player."
+spotifyPlay     = spotifySend ++ "Play"
+spotifyPause    = spotifySend ++ "Pause"
+spotifyPrevious = spotifySend ++ "Previous"
+spotifyNext     = spotifySend ++ "Next"
+
+
+
 keyBindings =
     -- hotkeys for often used programs
     [ ( "M-f",           spawn "firefox" )
     , ( "M-s",           spawn "spotify" )
+    , ( "M-<Up>",        spawn spotifyPlay)
+    , ( "M-<Down>",      spawn spotifyPause)
+    , ( "M-<Left>",      spawn spotifyPrevious)
+    , ( "M-<Right>",     spawn spotifyNext)
     , ( "M-i",           spawn "qutebrowser" )
+    , ( "M-x",           spawn "xterm" )
     , ( "M-n",           spawn $ myTerminal ++ " -e nnn" )
     , ( "M-y",           sendMessage $ ResizableTile.MirrorExpand )
     , ( "M-o",           sendMessage $ ResizableTile.MirrorShrink )
@@ -190,6 +207,13 @@ workspaceLogHook xmproc = Log.dynamicLogWithPP $
                         Log.ppOutput = (hPutStrLn xmproc) . workspaceFormat
                       }
 
+-- allow easy toggling of fadeinactive
+fade = True
+getLogHook xmproc = if fade
+                        then h <+> FadeInactive.fadeInactiveLogHook 0.9
+                        else h
+                        where h = workspaceLogHook xmproc
+
 getConfig wallpaperPath xmproc = def
     -- appearance
     { borderWidth        = 1
@@ -203,8 +227,7 @@ getConfig wallpaperPath xmproc = def
     , terminal           = myTerminal
     , startupHook        = startUp wallpaperPath
     , layoutHook         = myLayoutHook
-    , logHook            = workspaceLogHook xmproc
-                            <+> FadeInactive.fadeInactiveLogHook 0.9
+    , logHook            = getLogHook xmproc
     , manageHook         = doF StackSet.swapDown
     }
     `additionalKeysP`
