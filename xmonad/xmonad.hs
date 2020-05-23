@@ -16,8 +16,8 @@ import qualified XMonad.Layout.NoBorders as NoBorders
 import qualified XMonad.Layout.ResizableTile as ResizableTile
 import qualified XMonad.Layout.Spacing as Spacing
 import qualified XMonad.StackSet as StackSet
-import qualified XMonad.Util.SpawnOnce as SpawnOnce
 import qualified XMonad.Util.Run as Run
+import qualified XMonad.Util.SpawnOnce as SpawnOnce
 -- easier keybindings
 import XMonad.Util.EZConfig
     ( additionalKeys
@@ -42,8 +42,8 @@ getWallpaperPath = do
 myTerminal = "termite"
 
 notificationTimeOut = 3
-sendNotification :: MonadIO m => String -> m ()
-sendNotification message =
+notify :: MonadIO m => String -> m ()
+notify message =
     let command = "echo \""
                     ++ message
                     ++ "\" | dzen2 -p "
@@ -80,7 +80,20 @@ spotifyPause    = spotifySend ++ "Pause"
 spotifyPrevious = spotifySend ++ "Previous"
 spotifyNext     = spotifySend ++ "Next"
 
+youtubeMpv      = "xclip -selection clipboard -o"
+                  ++ " | xargs youtube-dl -o -"
+                  ++ " | mpv -"
 
+areenaMpv       = "xclip -selection clipboard -o"
+                  ++ " | xargs yle-dl --pipe"
+                  ++ " | mpv -"
+
+watchVideo      = "case $(xclip -selection clipboard -o) in"
+                  ++ " *areena.yle.fi*)"
+                  ++ areenaMpv ++ ";;"
+                  ++ " *youtube.com*|*youtu.be*)"
+                  ++ youtubeMpv ++ ";;"
+                  ++ " esac"
 
 keyBindings =
     -- hotkeys for often used programs
@@ -90,6 +103,7 @@ keyBindings =
     , ( "M-<Down>",      spawn spotifyPause)
     , ( "M-<Left>",      spawn spotifyPrevious)
     , ( "M-<Right>",     spawn spotifyNext)
+    , ( "M-v",           spawn watchVideo)
     , ( "M-i",           spawn "qutebrowser" )
     , ( "M-x",           spawn "xterm" )
     , ( "M-n",           spawn $ myTerminal ++ " -e nnn" )
@@ -98,11 +112,11 @@ keyBindings =
     , ( "M-S-l",         spawn "xscreensaver-command -lock" )
     , ( "M-r"
       , spawn spawnRedshift
-        <+> sendNotification "redshift: on"
+        <+> notify "redshift: on"
       )
     , ( "M-S-r"
       , spawn killRedshift
-        <+> sendNotification "redshift: off"
+        <+> notify "redshift: off"
       )
     ]
     ++
@@ -137,36 +151,36 @@ controlKeys =
     -- volume keys
     [ ( (0, 0x1008FF11)
       , spawn "amixer set Master unmute && amixer -q sset Master 2%-"
-         <+> sendNotification volumeMessage
+        <+> notify volumeMessage
       )
     , ( (0, 0x1008FF13)
       , spawn "amixer set Master unmute && amixer -q sset Master 2%+"
-         <+> sendNotification volumeMessage
+        <+> notify volumeMessage
       )
     , ( (0, 0x1008FF12)
       , spawn "amixer set Master toggle"
-        <+> sendNotification muteMessage
+        <+> notify muteMessage
       )
     -- brightness keys
     , ( (0, 0x1008FF02)
       , spawn "xbacklight -inc 8"
-        <+> sendNotification brightnessMessage
+        <+> notify brightnessMessage
       )
     , ( (0, 0x1008FF03)
       , spawn "xbacklight -dec 8"
-        <+> sendNotification brightnessMessage
+        <+> notify brightnessMessage
       )
     , ( (0, xK_Print)
       , spawn captureScreen
-        <+> sendNotification "screen copied to clipboard"
+        <+> notify "screen copied to clipboard"
       )
     , ( (mod4Mask, xK_Print)
       , spawn captureSelection
-        <+> sendNotification "select area to be copied to clipboard"
+        <+> notify "select area to be copied to clipboard"
       )
     , ( (mod4Mask .|. shiftMask, xK_Print)
       , spawn captureWindow
-        <+> sendNotification "window copied to clipboard"
+        <+> notify "window copied to clipboard"
       )
     ]
 
@@ -197,7 +211,7 @@ myLayoutHook = Spacing.spacingRaw smart screenBorder screen windowBorder window
 
 -- A hack to extract part of string between brackets.
 -- TODO: Find a proper way to do this
-workspaceStringColor = "#78e1f5"
+workspaceStringColor = "lightgray"
 workspaceFormat = (("<fc=" ++ workspaceStringColor ++ ">") ++)
                   . (++ "]</fc>")
                   . takeWhile (/= ']')

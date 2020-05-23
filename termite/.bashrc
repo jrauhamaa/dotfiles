@@ -53,3 +53,9 @@ _themes_completion() {
 complete -F _themes_completion theme
 
 alias d='. gotodir'
+
+function manvim() {
+  man $1 > /dev/null && man $1  | vim -R -
+}
+
+alias man='manvim'

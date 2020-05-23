@@ -6,6 +6,7 @@ set tabstop     =4
 set softtabstop =4
 set shiftwidth  =4
 set nowrap
+set history     =200
 
 " remove trailing whitespace on save
 autocmd BufWritePre * :%s/\s\+$//e

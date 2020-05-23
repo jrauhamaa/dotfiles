@@ -11,7 +11,7 @@ Config {
    , sepChar =  "%"   -- delineator between plugin names and straight text
    , alignSep = "}{"  -- separator between left-right alignment
    , template =
-        "%StdinReader% | %battery% | %multicpu% | %memory% | %dynnetwork% }{ %networkname% | %date% "
+        "%StdinReader% | %battery% | Cpu: %cpusum% | %memory% | %dynnetwork% }{ %networkname% | %date% "
 
    -- general behavior
    , lowerOnStart =     True    -- send to bottom of window stack on start
@@ -46,23 +46,21 @@ Config {
                              , "--high"     , "darkred"
                              ] 10
 
-        -- cpu activity monitor
-        , Run MultiCpu       [ "--template" , "Cpu: <total0>|<total1>%"
-                             , "--Low"      , "50"         -- units: %
-                             , "--High"     , "85"         -- units: %
-                             , "--low"      , "darkgreen"
-                             , "--normal"   , "darkorange"
-                             , "--high"     , "darkred"
-                             ] 10
-
         , Run StdinReader
+
+        , Run Com
+              "sh"
+              [ "-c"
+              , "/home/joppe/bin/cpuutilization | sed -e 's/^/<fc=darkorange>/' -e 's/$/<\\/fc>/'"
+              ]
+              "cpusum"
+              20
 
         , Run Com
               "sh"
               [ "-c"
               , "nmcli connection show | awk -f /home/joppe/code/projects/dotfiles/xmonad/networkname.awk"
               ]
-              -- [ "-c", "nmcli connection show" ]
               "networkname"
               100
 
