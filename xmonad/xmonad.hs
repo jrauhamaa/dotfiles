@@ -62,10 +62,10 @@ killRedshift  = "pgrep redshift | xargs kill"
 
 captureClipboard command = command
                            ++ " | xclip -selection clipboard -t image/png"
-captureScreen    = captureClipboard "maim"
-captureSelection = captureClipboard "maim -s"
+captureScreen    = captureClipboard "maim -u"
+captureSelection = captureClipboard "maim -s -u"
 captureWindow    = captureClipboard
-                       ( "maim -i $("
+                       ( "maim -u -i $("
                          ++ "xdotool getmouselocation | "
                          ++ "sed -re 's/.*window:([0-9]+)/\\1/'"
                          ++ ")" )
@@ -109,7 +109,7 @@ keyBindings =
     , ( "M-n",           spawn $ myTerminal ++ " -e nnn" )
     , ( "M-y",           sendMessage $ ResizableTile.MirrorExpand )
     , ( "M-o",           sendMessage $ ResizableTile.MirrorShrink )
-    , ( "M-S-l",         spawn "xscreensaver-command -lock" )
+    , ( "M-S-l",         spawn "slock" )
     , ( "M-r"
       , spawn spawnRedshift
         <+> notify "redshift: on"
@@ -187,7 +187,7 @@ controlKeys =
 startUp wallpaperPath =
     spawn "picom -bcCGf"
         <+> (spawn $ "feh --bg-fill " ++ wallpaperPath)
-        <+> (SpawnOnce.spawnOnce "xscreensaver -no-splash")
+        <+> (SpawnOnce.spawnOnce "xautolock -time 10 -locker slock")
 
 tallLayout = ResizableTile.ResizableTall nMasters
                                          resizeDelta

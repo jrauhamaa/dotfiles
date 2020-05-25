@@ -20,4 +20,4 @@ call matchadd('ColorColumn', '\%>80v', 100)
 
 nmap oo o<Esc>k
 nmap OO O<Esc>j
-
+map   :NERDTreeToggle<RETURN>
