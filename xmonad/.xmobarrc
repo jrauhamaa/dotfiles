@@ -11,7 +11,7 @@ Config {
    , sepChar =  "%"   -- delineator between plugin names and straight text
    , alignSep = "}{"  -- separator between left-right alignment
    , template =
-        "%StdinReader% | %battery% | Cpu: %cpusum% | %memory% | %dynnetwork% }{ %networkname% | %date% "
+        "%StdinReader% | %battery% | Cpu: <fc=darkorange>%cpusum% %cputemp%°C</fc> | %memory% | %dynnetwork% }{ %networkname% | %date% "
 
    -- general behavior
    , lowerOnStart =     True    -- send to bottom of window stack on start
@@ -51,9 +51,18 @@ Config {
         , Run Com
               "sh"
               [ "-c"
-              , "/home/joppe/bin/cpuutilization | sed -e 's/^/<fc=darkorange>/' -e 's/$/<\\/fc>/'"
+              -- ad padding to cpuutilization output to justify the string
+              , "/home/joppe/bin/cpuutilization | xargs printf '%-5s'"
               ]
               "cpusum"
+              20
+
+        , Run Com
+              "sh"
+              [ "-c"
+              , "cat /sys/class/thermal/thermal_zone*/temp | sort | tail -1 | sed 's/$/\\/1000/' | bc"
+              ]
+              "cputemp"
               20
 
         , Run Com

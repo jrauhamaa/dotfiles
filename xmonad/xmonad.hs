@@ -24,6 +24,9 @@ import XMonad.Util.EZConfig
     , additionalKeysP
     )
 
+---------------
+-- WALLPAPER --
+---------------
 wallpaperDir = "/home/joppe/Pictures/wallpapers/"
 
 getRandomIndex min max = do
@@ -39,7 +42,9 @@ getWallpaperPath = do
         , (wallpapers !! index)
         ]
 
-myTerminal = "termite"
+------------------
+-- NOTIFICAIONS --
+------------------
 
 notificationTimeOut = 3
 notify :: MonadIO m => String -> m ()
@@ -49,6 +54,30 @@ notify message =
                     ++ "\" | dzen2 -p "
                     ++ show notificationTimeOut
     in spawn command
+
+-- Unfortunately, this seems to be the way to get volume level pulse :(
+volumeMessage = "Volume: $("
+                ++ "sleep 0.1 && " -- wait for the volume change to apply
+                ++ "pactl list sinks"
+                ++ " | awk -F'/' '/Volume: front/  { print $4 }'"
+                ++ ")"
+
+muteMessage   = "Audio: $("
+                ++ "sleep 0.1 && "
+                ++ "pactl list sinks" -- wait for the changes to apply
+                ++ " | awk '/Mute: / { print $2 } '"
+                ++ " | sed -e 's/yes/muted/' -e 's/no/unmuted/'"
+                ++ ")"
+
+brightnessMessage = "Brightness: $("
+                    ++ "xbacklight"
+                    ++ " | sed -re 's/\\.?0+$//g'"
+                    ++ " | head -c 4"
+                    ++ ")%"
+
+--------------
+-- REDSHIFT --
+--------------
 
 -- An ugly hack to only start redshift if not yet running. spawnOnce is not
 -- suitable for this since it won't launch redshift after it has been stopped.
@@ -60,6 +89,10 @@ spawnRedshift = "[ -z $(pgrep redshift) ]"
                 ++ show nightT ++ "K"
 killRedshift  = "pgrep redshift | xargs kill"
 
+----------------
+-- SCREENSHOT --
+----------------
+
 captureClipboard command = command
                            ++ " | xclip -selection clipboard -t image/png"
 captureScreen    = captureClipboard "maim -u"
@@ -70,6 +103,10 @@ captureWindow    = captureClipboard
                          ++ "sed -re 's/.*window:([0-9]+)/\\1/'"
                          ++ ")" )
 
+-------------
+-- SPOTIFY --
+-------------
+
 spotifySend     = "dbus-send"
                   ++ " --print-reply"
                   ++ " --dest=org.mpris.MediaPlayer2.spotify"
@@ -79,6 +116,10 @@ spotifyPlay     = spotifySend ++ "Play"
 spotifyPause    = spotifySend ++ "Pause"
 spotifyPrevious = spotifySend ++ "Previous"
 spotifyNext     = spotifySend ++ "Next"
+
+------------
+-- VIDEOS --
+------------
 
 youtubeMpv      = "xclip -selection clipboard -o"
                   ++ " | xargs youtube-dl -o -"
@@ -94,6 +135,34 @@ watchVideo      = "case $(xclip -selection clipboard -o) in"
                   ++ " *youtube.com*|*youtu.be*)"
                   ++ youtubeMpv ++ ";;"
                   ++ " esac"
+
+------------
+-- XMOBAR --
+------------
+
+-- A hack to extract part of string between brackets.
+-- TODO: Find a proper way to do this
+workspaceStringColor = "lightgray"
+workspaceFormat = (("<fc=" ++ workspaceStringColor ++ ">") ++)
+                  . (++ "]</fc>")
+                  . takeWhile (/= ']')
+                  . dropWhile (/= '[')
+workspaceLogHook xmproc = Log.dynamicLogWithPP $
+                      Log.xmobarPP {
+                        Log.ppOutput = (hPutStrLn xmproc) . workspaceFormat
+                      }
+
+-- Pretty print options
+pp = Log.xmobarPP {
+    Log.ppCurrent = Log.xmobarColor "#429942" ""
+                        . Log.wrap "<" ">"
+}
+
+-----------------
+-- KEYBINDINGS --
+-----------------
+
+myTerminal = "termite"
 
 keyBindings =
     -- hotkeys for often used programs
@@ -126,26 +195,6 @@ keyBindings =
          )
       | i <- [1..9]
     ]
-
--- Unfortunately, this seems to be the way to get volume level pulse :(
-volumeMessage = "Volume: $("
-                ++ "sleep 0.1 && " -- wait for the volume change to apply
-                ++ "pactl list sinks"
-                ++ " | awk -F'/' '/Volume: front/  { print $4 }'"
-                ++ ")"
-
-muteMessage   = "Audio: $("
-                ++ "sleep 0.1 && "
-                ++ "pactl list sinks" -- wait for the changes to apply
-                ++ " | awk '/Mute: / { print $2 } '"
-                ++ " | sed -e 's/yes/muted/' -e 's/no/unmuted/'"
-                ++ ")"
-
-brightnessMessage = "Brightness: $("
-                    ++ "xbacklight"
-                    ++ " | sed -re 's/\\.?0+$//g'"
-                    ++ " | head -c 4"
-                    ++ ")%"
 
 controlKeys =
     -- volume keys
@@ -184,10 +233,12 @@ controlKeys =
       )
     ]
 
-startUp wallpaperPath =
-    spawn "picom -bcCGf"
-        <+> (spawn $ "feh --bg-fill " ++ wallpaperPath)
-        <+> (SpawnOnce.spawnOnce "xautolock -time 10 -locker slock")
+-- Key binding to toggle the status bar
+toggleStrutsKey XConfig {XMonad.modMask = modMask} = (modMask, xK_b)
+
+------------
+-- LAYOUT --
+------------
 
 tallLayout = ResizableTile.ResizableTall nMasters
                                          resizeDelta
@@ -206,20 +257,8 @@ myLayoutHook = Spacing.spacingRaw smart screenBorder screen windowBorder window
                     where screenBorder = Spacing.Border 3 3 3 3
                           windowBorder = Spacing.Border 3 3 3 3
                           smart        = True
-                          screen       = True
-                          window       = True
-
--- A hack to extract part of string between brackets.
--- TODO: Find a proper way to do this
-workspaceStringColor = "lightgray"
-workspaceFormat = (("<fc=" ++ workspaceStringColor ++ ">") ++)
-                  . (++ "]</fc>")
-                  . takeWhile (/= ']')
-                  . dropWhile (/= '[')
-workspaceLogHook xmproc = Log.dynamicLogWithPP $
-                      Log.xmobarPP {
-                        Log.ppOutput = (hPutStrLn xmproc) . workspaceFormat
-                      }
+                          screen       = False
+                          window       = False
 
 -- allow easy toggling of fadeinactive
 fade = True
@@ -227,6 +266,15 @@ getLogHook xmproc = if fade
                         then h <+> FadeInactive.fadeInactiveLogHook 0.9
                         else h
                         where h = workspaceLogHook xmproc
+
+-----------------
+-- MAIN CONFIG --
+-----------------
+
+onStartUp wallpaperPath =
+    spawn "picom -bcCGf"
+        <+> (spawn $ "feh --bg-fill " ++ wallpaperPath)
+        <+> (SpawnOnce.spawnOnce "xautolock -time 10 -locker slock")
 
 getConfig wallpaperPath xmproc = def
     -- appearance
@@ -239,7 +287,7 @@ getConfig wallpaperPath xmproc = def
     -- basic functionality
     , modMask            = mod4Mask -- Use Super instead of Alt
     , terminal           = myTerminal
-    , startupHook        = startUp wallpaperPath
+    , startupHook        = onStartUp wallpaperPath
     , layoutHook         = myLayoutHook
     , logHook            = getLogHook xmproc
     , manageHook         = doF StackSet.swapDown
@@ -248,15 +296,6 @@ getConfig wallpaperPath xmproc = def
     keyBindings
     `additionalKeys`
     controlKeys
-
--- Pretty print options
-pp = Log.xmobarPP {
-    Log.ppCurrent = Log.xmobarColor "#429942" ""
-                        . Log.wrap "<" ">"
-}
-
--- Key binding to toggle the status bar
-toggleStrutsKey XConfig {XMonad.modMask = modMask} = (modMask, xK_b)
 
 main = do
     wallpaperPath <- getWallpaperPath

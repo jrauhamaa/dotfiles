@@ -7,6 +7,10 @@ set softtabstop =4
 set shiftwidth  =4
 set nowrap
 set history     =200
+set nu
+set colorcolumn =80
+
+let NERDTreeShowHidden=1
 
 " remove trailing whitespace on save
 autocmd BufWritePre * :%s/\s\+$//e
@@ -16,8 +20,11 @@ autocmd BufReadPre,FileReadPre .xmobarrc :set syntax=haskell
 " autocmd BufWritePre * :%s#\($\n\s*\)\+\%$##
 " highlight portions of lines over 80 characters long
 highlight ColorColumn ctermbg=darkgray
-call matchadd('ColorColumn', '\%>80v', 100)
 
 nmap oo o<Esc>k
 nmap OO O<Esc>j
+nmap <C-H> :vertical resize -5<RETURN>
+nmap <C-L> :vertical resize +5<RETURN>
+nmap <C-K> :resize -5<RETURN>
+nmap <C-J> :resize +5<RETURN>
 map   :NERDTreeToggle<RETURN>
