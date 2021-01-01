@@ -24,23 +24,7 @@ import XMonad.Util.EZConfig
     , additionalKeysP
     )
 
----------------
--- WALLPAPER --
----------------
-wallpaperDir = "/home/joppe/Pictures/wallpapers/"
 
-getRandomIndex min max = do
-    gen <- getStdGen
-    let (index, newGen) = randomR (min, max) gen
-        in return index
-
-getWallpaperPath = do
-    wallpapers <- listDirectory wallpaperDir
-    index <- getRandomIndex 0 ((length wallpapers) - 1)
-    return $ joinPath
-        [ wallpaperDir
-        , (wallpapers !! index)
-        ]
 
 ------------------
 -- NOTIFICAIONS --
@@ -271,12 +255,14 @@ getLogHook xmproc = if fade
 -- MAIN CONFIG --
 -----------------
 
-onStartUp wallpaperPath =
+wallPaperDir = "/home/joppe/Pictures/wallpapers/"
+
+onStartUp =
     spawn "picom -bcCGf"
-        <+> (spawn $ "feh --bg-fill " ++ wallpaperPath)
+        <+> (spawn $ "feh --bg-fill --randomize " ++ wallPaperDir)
         <+> (SpawnOnce.spawnOnce "xautolock -time 10 -locker slock")
 
-getConfig wallpaperPath xmproc = def
+getConfig xmproc = def
     -- appearance
     { borderWidth        = 1
     , normalBorderColor  = "#151515"
@@ -287,7 +273,7 @@ getConfig wallpaperPath xmproc = def
     -- basic functionality
     , modMask            = mod4Mask -- Use Super instead of Alt
     , terminal           = myTerminal
-    , startupHook        = onStartUp wallpaperPath
+    , startupHook        = onStartUp
     , layoutHook         = myLayoutHook
     , logHook            = getLogHook xmproc
     , manageHook         = doF StackSet.swapDown
@@ -298,7 +284,6 @@ getConfig wallpaperPath xmproc = def
     controlKeys
 
 main = do
-    wallpaperPath <- getWallpaperPath
-    xmproc        <- Run.spawnPipe "xmobar -d"
-    let config = getConfig wallpaperPath xmproc
+    xmproc <- Run.spawnPipe "xmobar -d"
+    let config = getConfig xmproc
         in xmonad =<< Log.statusBar "xmobar" pp toggleStrutsKey config
