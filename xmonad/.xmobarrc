@@ -3,15 +3,18 @@ Config {
 
    -- appearance
      font =         "xft:Bitstream Vera Sans Mono:size=9:bold:antialias=true"
+   --  font =         "xft:Source Code Pro:size=9:regular:antialias=true"
    , bgColor =      "black"
    , fgColor =      "#646464"
    , position =     Top
+   -- , position = Static { xpos = 0 , ypos = 0, width = 1024, height = 22 }
+   , iconRoot =     "/home/joppe/Pictures/icons/xpm/22x22"
 
    -- layout
    , sepChar =  "%"   -- delineator between plugin names and straight text
    , alignSep = "}{"  -- separator between left-right alignment
    , template =
-        "%StdinReader% | %battery% | Cpu: <fc=darkorange>%cpusum% %cputemp%°C</fc> | %memory% | %dynnetwork% }{ %networkname% | %date% "
+        "%StdinReader% | %battery% | Cpu: <fc=darkorange>%cpusum% %cputemp%°C</fc> | %memory% | %dynnetwork% }{ %nowplaying% <icon=status/network-wireless-none.xpm/> <fc=darkgray>%networkname%</fc>  | %date% "
 
    -- general behavior
    , lowerOnStart =     True    -- send to bottom of window stack on start
@@ -68,10 +71,18 @@ Config {
         , Run Com
               "sh"
               [ "-c"
-              , "nmcli connection show | awk -f /home/joppe/code/projects/dotfiles/xmonad/networkname.awk"
+              , "nmcli connection show | awk -f /home/joppe/bin/networkname.awk"
               ]
               "networkname"
               100
+
+        , Run Com
+              "sh"
+              [ "-c"
+              , "/home/joppe/bin/nowplaying"
+              ]
+              "nowplaying"
+              20
 
         -- memory usage monitor
         , Run Memory         [ "--template" ,"Mem: <usedratio>%"

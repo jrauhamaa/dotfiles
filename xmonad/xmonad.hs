@@ -33,10 +33,8 @@ import XMonad.Util.EZConfig
 notificationTimeOut = 3
 notify :: MonadIO m => String -> m ()
 notify message =
-    let command = "echo \""
-                    ++ message
-                    ++ "\" | dzen2 -p "
-                    ++ show notificationTimeOut
+    let command = "echo \"" ++ message ++ "\""
+                  ++ " | dzen2 -p " ++ show notificationTimeOut
     in spawn command
 
 -- Unfortunately, this seems to be the way to get volume level pulse :(
@@ -54,23 +52,27 @@ muteMessage   = "Audio: $("
                 ++ ")"
 
 brightnessMessage = "Brightness: $("
-                    ++ "xbacklight"
-                    ++ " | sed -re 's/\\.?0+$//g'"
-                    ++ " | head -c 4"
+                    ++ "sleep 0.1 && "
+                    ++ "xbacklight -get"
                     ++ ")%"
 
 --------------
 -- REDSHIFT --
 --------------
 
--- An ugly hack to only start redshift if not yet running. spawnOnce is not
+-- Use an ugly hack to only start redshift if not yet running. spawnOnce is not
 -- suitable for this since it won't launch redshift after it has been stopped.
+-- Geoclue sometimes fail to respond. Use hardcoded coordinates of Helsinki
+-- instead.
+latitude      = 60.17
+longitude     = 24.93
+
 dayT          = 5000
 nightT        = 3500
 spawnRedshift = "[ -z $(pgrep redshift) ]"
-                ++ " && redshift -t "
-                ++ show dayT ++ "K:"
-                ++ show nightT ++ "K"
+                ++ " && redshift"
+                ++ " -t " ++ show dayT ++ "K:" ++ show nightT ++ "K"
+                ++ " -l " ++ show latitude ++ ":" ++ show longitude
 killRedshift  = "pgrep redshift | xargs kill"
 
 ----------------
@@ -87,25 +89,12 @@ captureWindow    = captureClipboard
                          ++ "sed -re 's/.*window:([0-9]+)/\\1/'"
                          ++ ")" )
 
--------------
--- SPOTIFY --
--------------
-
-spotifySend     = "dbus-send"
-                  ++ " --print-reply"
-                  ++ " --dest=org.mpris.MediaPlayer2.spotify"
-                  ++ " /org/mpris/MediaPlayer2"
-                  ++ " org.mpris.MediaPlayer2.Player."
-spotifyPlay     = spotifySend ++ "Play"
-spotifyPause    = spotifySend ++ "Pause"
-spotifyPrevious = spotifySend ++ "Previous"
-spotifyNext     = spotifySend ++ "Next"
-
 ------------
 -- VIDEOS --
 ------------
 
 youtubeMpv      = "xclip -selection clipboard -o"
+                  ++ " | sed -e 's/&.*//'"
                   ++ " | xargs youtube-dl -o -"
                   ++ " | mpv -"
 
@@ -146,23 +135,34 @@ pp = Log.xmobarPP {
 -- KEYBINDINGS --
 -----------------
 
-myTerminal = "termite"
+myTerminal = "alacritty"
 
 keyBindings =
     -- hotkeys for often used programs
-    [ ( "M-f",           spawn "firefox" )
-    , ( "M-s",           spawn "spotify" )
-    , ( "M-<Up>",        spawn spotifyPlay)
-    , ( "M-<Down>",      spawn spotifyPause)
-    , ( "M-<Left>",      spawn spotifyPrevious)
-    , ( "M-<Right>",     spawn spotifyNext)
-    , ( "M-v",           spawn watchVideo)
-    , ( "M-i",           spawn "qutebrowser" )
-    , ( "M-x",           spawn "xterm" )
-    , ( "M-n",           spawn $ myTerminal ++ " -e nnn" )
-    , ( "M-y",           sendMessage $ ResizableTile.MirrorExpand )
-    , ( "M-o",           sendMessage $ ResizableTile.MirrorShrink )
-    , ( "M-S-l",         spawn "slock" )
+    [ ( "M-f",              spawn "firefox" )
+    , ( "M-s",              spawn "spotify" )
+    , ( "M-<Up>",           spawn "playerctl play" )
+    , ( "M-<Down>",         spawn "playerctl pause" )
+    , ( "M-<Left>",         spawn "playerctl previous" )
+    , ( "<XF86AudioPrev>",  spawn "playerctl previous" )
+    , ( "M-<Right>",        spawn "playerctl next" )
+    , ( "<XF86AudioNext>",  spawn "playerctl next" )
+    , ( "M-v",              spawn watchVideo)
+    , ( "M-i",              spawn "qutebrowser" )
+    , ( "M-d",              spawn "discord" )
+    -- discord will keep running as a background process and needs to be killed this way
+    -- won't work unless killall is called twice
+    , ( "M-S-d",            spawn "killall Discord && killall Discord" )
+    , ( "M-x",              spawn "xterm" )
+    , ( "M-n",              spawn $ myTerminal ++ " -e nnn" )
+    , ( "M-y",              sendMessage $ ResizableTile.MirrorExpand )
+    , ( "M-o",              sendMessage $ ResizableTile.MirrorShrink )
+    , ( "M-S-l",            spawn "slock" )
+    , ( "M-m",              spawn "signal-desktop" )
+    , ( "M-e",              spawn "element-desktop" )
+    , ( "M-S-e",            spawn "ps aux | grep app.asar | grep electron | head -2 | tr -s ' ' | cut -f2 -d' ' | xargs kill" )
+    , ( "M-S-m",            spawn "telegram-desktop" )
+    , ( "M-S-w",            spawn $ "feh --bg-fill --randomize " ++ wallPaperDir )
     , ( "M-r"
       , spawn spawnRedshift
         <+> notify "redshift: on"
@@ -170,6 +170,17 @@ keyBindings =
     , ( "M-S-r"
       , spawn killRedshift
         <+> notify "redshift: off"
+      )
+    , ( "<XF86AudioMute>"
+      , spawn "amixer set Master toggle" <+> notify muteMessage
+      )
+    , ( "<XF86AudioLowerVolume>"
+      , spawn "amixer set Master unmute && amixer -q sset Master 2%-"
+        <+> notify volumeMessage
+      )
+    , ( "<XF86AudioRaiseVolume>"
+      , spawn "amixer set Master unmute && amixer -q sset Master 2%+"
+        <+> notify volumeMessage
       )
     ]
     ++
@@ -182,7 +193,9 @@ keyBindings =
 
 controlKeys =
     -- volume keys
-    [ ( (0, 0x1008FF11)
+    [
+    {-
+      ( (0, 0x1008FF11)
       , spawn "amixer set Master unmute && amixer -q sset Master 2%-"
         <+> notify volumeMessage
       )
@@ -194,8 +207,9 @@ controlKeys =
       , spawn "amixer set Master toggle"
         <+> notify muteMessage
       )
+    -}
     -- brightness keys
-    , ( (0, 0x1008FF02)
+      ( (0, 0x1008FF02)
       , spawn "xbacklight -inc 8"
         <+> notify brightnessMessage
       )
@@ -245,7 +259,7 @@ myLayoutHook = Spacing.spacingRaw smart screenBorder screen windowBorder window
                           window       = False
 
 -- allow easy toggling of fadeinactive
-fade = True
+fade = False
 getLogHook xmproc = if fade
                         then h <+> FadeInactive.fadeInactiveLogHook 0.9
                         else h
@@ -259,8 +273,13 @@ wallPaperDir = "/home/joppe/Pictures/wallpapers/"
 
 onStartUp =
     spawn "picom -bcCGf"
-        <+> (spawn $ "feh --bg-fill --randomize " ++ wallPaperDir)
-        <+> (SpawnOnce.spawnOnce "xautolock -time 10 -locker slock")
+        <+> ( spawn $ "feh --bg-fill --randomize " ++ wallPaperDir )
+        <+> ( SpawnOnce.spawnOnce $ "xautolock"
+                                    ++ " -time 10"
+                                    -- disable screenlock when mouse in
+                                    -- top-right corner
+                                    ++ " -corners 0-00"
+                                    ++ " -locker slock" )
 
 getConfig xmproc = def
     -- appearance

@@ -32,14 +32,13 @@ alias p='ps ax -o pid,user,%cpu,%mem,vsz,rss,stat,bsdstart,times,args --forest'
 
 # nnn
 export NNN_BMS="d:~/Downloads\
-;h:~
-;r:/
-;c:~/code
-;p:~/code/projects
-;t:~/code/projects/dippa"
+;h:~\
+;r:/\
+;c:~/code\
+;t:~/code/dippa"
 export NNN_USE_EDITOR=1
 
-export PATH=~/bin:$PATH
+export PATH=~/bin:~/.local/bin:$PATH
 
 # git autocomplete
 . /usr/share/git/completion/git-completion.bash
@@ -59,3 +58,5 @@ function manvim() {
 }
 
 alias man='manvim'
+export MANWIDTH=79
+
