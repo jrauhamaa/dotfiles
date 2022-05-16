@@ -48,43 +48,48 @@ inoremap <C-D> <delete>
 
 augroup filetype_tex
     autocmd!
-    autocmd FileType tex vnoremap <leader>i :<c-u>call TexCmdWrap("textit")<cr>
-    autocmd FileType tex vnoremap <leader>b :<c-u>call TexCmdWrap("textbf")<cr>
-    autocmd FileType tex vnoremap <leader>e :<c-u>call TexEnvWrap()<cr>
+    autocmd FileType tex vnoremap <leader>i :<c-u>call TexCmdWrap("textit", "<", ">", "char")<cr>
+    autocmd FileType tex nnoremap <leader>i :set opfunc=TexItalicHelper<cr>g@
+    autocmd FileType tex vnoremap <leader>b :<c-u>call TexCmdWrap("textbf", "<", ">", "char")<cr>
+    autocmd FileType tex nnoremap <leader>b :set opfunc=TexBoldHelper<cr>g@
+    autocmd FileType tex vnoremap <leader>e :<c-u>call TexEnvWrap("<", ">")<cr>
+    autocmd FileType tex nnoremap <leader>e :set opfunc=TexEnvWrapOp<cr>g@
     autocmd FileType tex set complete-=i
 augroup END
 
-function TexEnvWrap()
+function TexEnvWrapOp(type)
+    call TexEnvWrap("[", "]")
+endfunction
+
+function TexEnvWrap(mBegin, mEnd)
     call inputsave()
     let envName = input('Environment name: ')
     call inputrestore()
     if strlen(envName)
-        call TexEnvWrapHelper(envName)
+        call TexEnvWrapHelper(envName, a:mBegin, a:mEnd)
     endif
 endfunction
 
-function TexEnvWrapHelper(envName)
-    " indent the block
-    normal! '<>'>
-    " move to the end of the block
-    normal! '>
-    " insert ending tag
-    execute "normal! o\\end{" . a:envName . "}"
-    " move to the beginning of the block
-    normal! '<
-    " insert beginning tag one line after the correct position for correct
-    " indentation
-    execute "normal! o\\begin{" . a:envName . "}"
-    " fix indentation
-    normal! <<
-    " move beginning tag to the correct position
-    normal! ddkP
+function TexEnvWrapHelper(envName, mBegin, mEnd)
+    execute "normal! '" . a:mBegin . "v'" . a:mEnd . "$h"
+    execute "normal! s\\begin{" . a:envName . "}\"\\end{" . a:envName . "}"
 endfunction
 
-function TexCmdWrap(command)
-    normal! `>
-    normal! a}
-    normal! `<
-    execute "normal! i\\" . a:command . "{"
+function TexCmdWrap(texCommand, mBegin, mEnd, type)
+    if a:type == "char"
+        let vCommand = "`" . a:mBegin . "v`" . a:mEnd
+    else
+        let vCommand = "'" . a:mBegin . "v'" . a:mEnd . "$h"
+    endif
+    execute "normal! " . vCommand . "s\\" . a:texCommand . "{}"
+    normal! ""P
+endfunction
+
+function TexBoldHelper(type)
+    call TexCmdWrap("textbf", "[", "]", a:type)
+endfunction
+
+function TexItalicHelper(type)
+    call TexCmdWrap("textit", "[", "]", a:type)
 endfunction
 
